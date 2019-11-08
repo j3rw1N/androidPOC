@@ -1,18 +1,11 @@
-package com.example.news_zoid_demo.data;
+package com.example.news_zoid_demo.utils;
 
 import android.app.Application;
 import android.content.Context;
 import android.os.StrictMode;
 import android.util.Log;
 
-import com.android.volley.Cache;
-import com.android.volley.Network;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.BasicNetwork;
-import com.android.volley.toolbox.DiskBasedCache;
-import com.android.volley.toolbox.HurlStack;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.RequestFuture;
+import com.example.news_zoid_demo.data.Result;
 import com.example.news_zoid_demo.data.model.LoggedInUser;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -20,26 +13,25 @@ import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.SyncHttpClient;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.concurrent.ExecutionException;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
-/**
- * Class that handles authentication w/ login credentials and retrieves user information.
- */
-public class LoginDataSource  extends Application {
-
+public class HttpClient extends Application {
     private static AsyncHttpClient client = new SyncHttpClient(8443,8443);
     private static final String baseURL = "https://newszoid.stackroute.io";
     static String jwtToken;
+    static JSONObject retResp;
 
-    public Result<LoggedInUser> login(String username, String password) {
+    public JSONObject register(String username, String password, String email, String name, String dob, List<String> pref) {
+        //String baseURL = LoginDataSource.getContext().getResources().getString(R.string.baseURL);
+        //final String jwtToken;
+
         int SDK_INT = android.os.Build.VERSION.SDK_INT;
         if (SDK_INT > 8) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
@@ -49,14 +41,17 @@ public class LoginDataSource  extends Application {
                 JSONObject params = new JSONObject();
                 params.put("username", username);
                 params.put("password", password);
+                params.put("email", email);
+                params.put("name", name);
+                params.put("newsPreferences", new JSONArray(pref));
+                params.put("dateOfBirth", dob);
                 StringEntity entity = new StringEntity(params.toString());
-                post(this, "/login-service/api/v1/authenticate", entity, "application/json",
+                post(this, "/registration-service/api/v1/register", entity, "application/json",
                         new JsonHttpResponseHandler() {
                             @Override
                             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                                // Root JSON in response is an dictionary i.e { "data : [ ... ] }
-                                // Handle resulting parsed JSON response here
                                 try {
+                                    retResp = response;
                                     jwtToken = response.getString("jwtToken");
                                 }
                                 catch (JSONException e){}
@@ -66,11 +61,13 @@ public class LoginDataSource  extends Application {
                             @Override
                             public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
                                 // called when response HTTP status is "4XX" (eg. 401, 403, 404)
+                                retResp = null;
                                 Log.e("errorResp", res);
                             }
 
                             @Override
                             public void onFailure(int statusCode, Header[] headers, Throwable t, JSONObject obj) {
+                                retResp = null;
                                 Log.e("errorResp", obj.toString());
                             }
                         });
@@ -79,11 +76,7 @@ public class LoginDataSource  extends Application {
             }
         }
 
-        LoggedInUser user =
-                new LoggedInUser(
-                        username,
-                        jwtToken);
-        return new Result.Success<>(user);
+        return retResp;
     }
 
 
