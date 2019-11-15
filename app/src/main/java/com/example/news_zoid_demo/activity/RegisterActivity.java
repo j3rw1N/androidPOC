@@ -3,6 +3,9 @@ package com.example.news_zoid_demo.activity;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DatePickerDialog;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,14 +13,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.example.news_zoid_demo.R;
 import com.example.news_zoid_demo.utils.HttpClient;
+import com.example.news_zoid_demo.utils.NewszoidRestClient;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.loopj.android.http.JsonHttpResponseHandler;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,7 +36,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import br.com.simplepass.loadingbutton.customViews.CircularProgressButton;
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+
 public class RegisterActivity extends AppCompatActivity {
+
+    private static final String registerEndPoint = "/registration-service/api/v1/register";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +78,6 @@ public class RegisterActivity extends AppCompatActivity {
             String email = emailEditText.getText().toString();
             String name = nameEditText.getText().toString();
             String dob = dobEditText.getText().toString();
-            Log.w("dobbbbb", dob);
             List<String> pref = new ArrayList<>();
             ChipGroup chg = findViewById(R.id.chipGroup);
             int chipsCount = chg.getChildCount();
@@ -77,11 +93,58 @@ public class RegisterActivity extends AppCompatActivity {
                     i++;
                 };
             }
-            HttpClient httpClient = new HttpClient();
-            JSONObject resp = httpClient.register(username, password, email, name, dob, pref);
-            Log.w("regActivity", resp.toString());
+            //HttpClient httpClient = new HttpClient();
+            //JSONObject resp = httpClient.register(username, password, email, name, dob, pref);
+            //Log.w("regActivity", resp.toString());
+            try {
+                register(username, password, email, name, dob, pref);
+            }
+            catch (JSONException | UnsupportedEncodingException e) {}
         });
 
+    }
+
+
+    private void register(String username, String password, String email, String name, String dob, List<String> pref) throws JSONException, UnsupportedEncodingException {
+        CircularProgressButton btn = findViewById(R.id.btn_register);
+        btn.startAnimation();
+        JSONObject params = new JSONObject();
+        params.put("username", username);
+        params.put("password", password);
+        params.put("email", email);
+        params.put("name", name);
+        params.put("newsPreferences", new JSONArray(pref));
+        params.put("dateOfBirth", dob);
+        StringEntity param = new StringEntity(params.toString());
+        NewszoidRestClient.post(this, registerEndPoint, param, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Resources res = getApplicationContext().getResources();
+                Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.ic_done_white_48dp);
+                btn.doneLoadingAnimation(0, bitmap);
+                System.out.println(response.toString());
+                Toast.makeText(getApplicationContext(), "Registered successfully!!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray timeline) { }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                if(statusCode == 409) {
+                    Toast.makeText(getApplicationContext(), "User already exist!!", Toast.LENGTH_SHORT).show();
+                }
+                btn.revertAnimation();
+                Log.e("Register failure", responseString);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(getApplicationContext(), "Unexpected error please try again", Toast.LENGTH_SHORT).show();
+                Log.e("Register failure", statusCode+":");
+            }
+
+        });
     }
 
 
