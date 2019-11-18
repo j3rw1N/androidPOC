@@ -7,7 +7,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -25,11 +28,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.news_zoid_demo.ui.login.LoginActivity;
+import com.example.news_zoid_demo.activity.LoginActivity;
 import com.example.news_zoid_demo.utils.HttpClient;
+import com.example.news_zoid_demo.utils.NewszoidRestClient;
 import com.google.android.gms.common.internal.Constants;
 import com.google.gson.JsonParser;
 import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 import com.yayandroid.locationmanager.LocationManager;
 import com.yayandroid.locationmanager.configuration.DefaultProviderConfiguration;
 import com.yayandroid.locationmanager.configuration.GooglePlayServicesConfiguration;
@@ -45,14 +51,21 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.stream.Collectors;
+
+import br.com.simplepass.loadingbutton.customViews.CircularProgressButton;
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
 import static java.security.AccessController.getContext;
 
@@ -64,20 +77,33 @@ public class UploadActivity extends AppCompatActivity {
     private String pathToStoredVideo;
     private String awsUrl;
     private String postLocation;
+    private String title;
+    private EditText titleEditText;
+    private EditText selectCategory;
+    private CircularProgressButton btn;
+    private ProgressDialog dialog;
     private static AsyncHttpClient client = new AsyncHttpClient(8443,8443);
     private static String baseURL = "https://newszoid.stackroute.io";
+    private static final String uploadEndPoint = "/content-service/api/v1/file/";
+    private static final String postEndPoint = "/content-service/api/v1/post/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload);
         Button captureVideoButton = (Button)findViewById(R.id.btn_capture);
-        final EditText selectCategory = findViewById(R.id.category);
-        final EditText titleEditText = findViewById(R.id.title);
-        ProgressDialog dialog = new ProgressDialog(UploadActivity.this);
-        dialog.setMessage("Your message..");
+        selectCategory = findViewById(R.id.category);
+        titleEditText = findViewById(R.id.title);
+        dialog = new ProgressDialog(UploadActivity.this);
+        dialog.setMessage("Getting location..");
+        btn = findViewById(R.id.btn_upload);
 
-        selectCategory.setEnabled(false);
+        //selectCategory.setEnabled(false);
+        selectCategory.setFocusable(false);
+        selectCategory.setInputType(0);
+
+
+        dialog.show();
 
         postLocation = null;
         LocationConfiguration awesomeConfiguration = new LocationConfiguration.Builder()
@@ -113,7 +139,7 @@ public class UploadActivity extends AppCompatActivity {
 
                     @Override
                     public void onLocationChanged(Location location) {
-
+                        dialog.dismiss();
                         System.out.println(location.getLatitude() + "," + location.getLongitude());
                         getData(location);
                         Geocoder geoCoder = new Geocoder(UploadActivity.this, Locale.getDefault()); //it is Geocoder
@@ -171,7 +197,7 @@ public class UploadActivity extends AppCompatActivity {
             String[] singleChoiceItems = getResources().getStringArray(R.array.dialog_choice_category);
             int itemSelected = 0;
             new AlertDialog.Builder(UploadActivity.this)
-                    .setTitle("test3")
+                    .setTitle("Select category")
                     .setSingleChoiceItems(singleChoiceItems, itemSelected, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
@@ -179,7 +205,7 @@ public class UploadActivity extends AppCompatActivity {
                             dialogInterface.dismiss();
                         }
                     })
-                    .setNegativeButton("cancel test", null)
+                    .setNegativeButton("Cancel", null)
                     .show();
         });
 
@@ -197,13 +223,16 @@ public class UploadActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //uploadVideoToServer(pathToStoredVideo);
-                dialog.show();
-                uploadFile(getAbsoluteUrl("/upload"), new File(pathToStoredVideo));
+                //dialog.show();
+                //uploadFile(getAbsoluteUrl("/upload"), new File(pathToStoredVideo));
+                btn.startAnimation();
+                uploadFile(new File(pathToStoredVideo));
                 String title = titleEditText.getText().toString();
                 HttpClient httpClient = new HttpClient();
                 Intent intent = getIntent();
                 String jwtToken = intent.getStringExtra("jwtToken");
-                JSONObject resp = httpClient.postNews(jwtToken, title, awsUrl, "j3rwin", "Sports", postLocation);
+                String username = intent.getStringExtra("username");
+                //JSONObject resp = httpClient.postNews(jwtToken, title, awsUrl, username, "Sports", postLocation);
             }
         });
     }
@@ -229,107 +258,6 @@ public class UploadActivity extends AppCompatActivity {
         }
     }
 
-    private static String getAbsoluteUrl(String relativeUrl) {
-        return baseURL + relativeUrl;
-    }
-
-    public Boolean uploadFile(String serverURL, File file){
-
-        String upLoadServerUri = "https://newszoid.stackroute.io:8443/content-service/api/v1/file/";
-        Intent intent = getIntent();
-        String jwtToken = intent.getStringExtra("jwtToken");
-
-        HttpURLConnection conn = null;
-        DataOutputStream dos = null;
-        String lineEnd = "\r\n";
-        String twoHyphens = "--";
-        String boundary = "*****";
-        int bytesRead, bytesAvailable, bufferSize;
-        byte[] buffer;
-        int maxBufferSize = 1 * 1024 * 1024;
-        File sourceFile = file;
-        //errMsg=Environment.getExternalStorageDirectory().getAbsolutePath();
-        if (!sourceFile.isFile())
-        {
-            Log.e("uploadFile", "Source File Does not exist");
-            return false;
-        }
-        try {
-            // open a URL connection to the Servlet
-            FileInputStream fileInputStream = new FileInputStream(sourceFile);
-            URL url = new URL(upLoadServerUri);
-            conn = (HttpURLConnection) url.openConnection(); // Open a HTTP  connection to  the URL
-            conn.setDoInput(true); // Allow Inputs
-            conn.setDoOutput(true); // Allow Outputs
-            conn.setUseCaches(false); // Don't use a Cached Copy
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Connection", "Keep-Alive");
-            //conn.setRequestProperty("ENCTYPE", "multipart/form-data");
-            conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-            conn.setRequestProperty("Authorization", "Bearer "+jwtToken);
-            conn.setRequestProperty("file", file.getName());
-            //conn.setRequestProperty("pid", "4");
-            dos = new DataOutputStream(conn.getOutputStream());
-
-            /*dos.writeBytes(twoHyphens + boundary + lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"title\""+ lineEnd);
-            dos.writeBytes(lineEnd);
-            EditText edit = (EditText)findViewById(R.id.editText);
-            String title = edit.getText().toString();
-            dos.writeBytes(title);
-            dos.writeBytes(lineEnd);*/
-
-            dos.writeBytes(twoHyphens + boundary + lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\""+ file.getName() + "\"" + lineEnd);
-            dos.writeBytes(lineEnd);
-
-            bytesAvailable = fileInputStream.available(); // create a buffer of  maximum size
-
-            bufferSize = Math.min(bytesAvailable, maxBufferSize);
-            buffer = new byte[bufferSize];
-
-            // read file and write it into form...
-            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
-            while (bytesRead > 0) {
-                dos.write(buffer, 0, bufferSize);
-                bytesAvailable = fileInputStream.available();
-                bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-            }
-
-            // send multipart form data necesssary after file data...
-            dos.writeBytes(lineEnd);
-            dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
-            // Responses from the server (code and message)
-            int serverResponseCode = conn.getResponseCode();
-            String serverResponseMessage = new BufferedReader(new InputStreamReader(conn.getInputStream()))
-                    .lines().collect(Collectors.joining("\n"));
-            awsUrl = serverResponseMessage;
-            Log.i("uploadFile", "HTTP Response is : " + serverResponseMessage + ": " + serverResponseCode);
-            if(serverResponseCode != 201)
-            {
-               Log.w("aaaaaaaaaa","errrrrrrrrrrrr");
-            }
-
-            //close the streams //
-            fileInputStream.close();
-            dos.flush();
-            dos.close();
-
-        } catch (MalformedURLException ex) {
-            // dialog.dismiss();
-            ex.printStackTrace();
-            Log.e("Upload file to server", "error: " + ex.getMessage(), ex);
-        } catch (Exception e) {
-            //  dialog.dismiss();
-            e.printStackTrace();
-            Log.e("Upload file to server Exception", "Exception : " + e.getMessage(), e);
-        }
-
-        return true;
-    }
 
 
     public void getData(Location location) {
@@ -351,6 +279,96 @@ public class UploadActivity extends AppCompatActivity {
         }
     }
 
+    private void uploadFile(File file) {
+        Intent intent = getIntent();
+        String jwtToken = intent.getStringExtra("jwtToken");
+        RequestParams params = new RequestParams();
+        try {
+            params.put("file", file);
+        } catch(FileNotFoundException e) {}
+        NewszoidRestClient.post(this, uploadEndPoint, jwtToken, params, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                System.out.println(response.toString());
+            }
+
+            @Override
+            public void onSuccess(int k,Header[] headers, String response) {
+                Log.d(TAG, "RRRRRR "+ response );
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray timeline) { }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                if(statusCode == 201) {
+                    awsUrl = responseString;
+                    try {
+                        postNews();
+                    }
+                    catch (Exception e) {}
+                }
+                Log.e("Login failure", statusCode+":"+responseString);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(getApplicationContext(), "Unexpected error please try again", Toast.LENGTH_SHORT).show();
+                Log.e("Login failure", statusCode+":");
+            }
+
+        });
+    }
+
+    private void postNews() throws UnsupportedEncodingException, JSONException {
+        Intent intent = getIntent();
+        String jwtToken = intent.getStringExtra("jwtToken");
+        String username = intent.getStringExtra("userName");
+        String title = titleEditText.getText().toString();
+        String category = selectCategory.getText().toString();
+
+        Random rnd = new Random();
+        int id = 100000 + rnd.nextInt(900000);
+
+        JSONArray watchedBy = new JSONArray();
+        JSONObject params = new JSONObject();
+        params.put("title", title);
+        params.put("id", id);
+        params.put("videoUrl", awsUrl);
+        params.put("location", postLocation);
+        params.put("postedBy", username);
+        params.put("category", category);
+        params.put("watchedBy", watchedBy);
+        StringEntity entity = new StringEntity(params.toString());
+        NewszoidRestClient.post2(this, postEndPoint, jwtToken, entity, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                System.out.println(response.toString());
+                Toast.makeText(getApplicationContext(), "Posted successfully!!", Toast.LENGTH_SHORT).show();
+                Resources res = getApplicationContext().getResources();
+                Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.ic_done_white_48dp);
+                btn.doneLoadingAnimation(0, bitmap);
+                btn.revertAnimation();
+            }
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray timeline) { }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                Toast.makeText(getApplicationContext(), "Upload failed please try again", Toast.LENGTH_SHORT).show();
+                Log.e("Upload failure", statusCode+":"+responseString);
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Toast.makeText(getApplicationContext(), "Unexpected error please try again", Toast.LENGTH_SHORT).show();
+                Log.e("Upload failure", statusCode+":");
+            }
+
+        });
+    }
 
 
 }

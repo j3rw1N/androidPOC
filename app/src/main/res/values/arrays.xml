@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="dialog_choice_category">
-        <item>New York</item>
-        <item>Los Angeles</item>
-        <item>San Francisco</item>
-        <item>Paris</item>
-        <item>London</item>
+        <item>National</item>
+        <item>International</item>
+        <item>Business</item>
+        <item>Technology</item>
+        <item>Entertainment</item>
+        <item>Sports</item>
+        <item>Science</item>
+        <item>Health</item>
     </string-array>
 </resources>

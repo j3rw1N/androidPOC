@@ -17,8 +17,14 @@ public class NewszoidRestClient {
         client.get(getAbsoluteUrl(url), params, responseHandler);
     }
 
-    public static void post(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
-        client.post(getAbsoluteUrl(url), params, responseHandler);
+    public static void post(Context context, String url, String jwt, RequestParams params, AsyncHttpResponseHandler responseHandler) {
+        client.addHeader("Authorization", "Bearer "+jwt);
+        client.post(context, getAbsoluteUrl(url), params, responseHandler);
+    }
+
+    public static void post2(Context context, String url, String jwt, StringEntity params, AsyncHttpResponseHandler responseHandler) {
+        client.addHeader("Authorization", "Bearer "+jwt);
+        client.post(context, getAbsoluteUrl(url), params, "application/json",responseHandler);
     }
 
     public static void get(Context context, String url, StringEntity params, AsyncHttpResponseHandler responseHandler) {

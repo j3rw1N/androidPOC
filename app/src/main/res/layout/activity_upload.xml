@@ -21,7 +21,7 @@
         android:visibility="gone" />
 
     <ScrollView
-        android:id="@+id/form_login"
+        android:id="@+id/form_upload"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="false">
@@ -30,6 +30,7 @@
             android:id="@+id/email_login_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -50,7 +51,7 @@
 
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/input_email"
+                android:id="@+id/input_category"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -65,21 +66,6 @@
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/input_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <EditText
-                    android:id="@+id/name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Name"
-                    android:imeOptions="actionNext"
-                    android:maxLength="20"
-                    android:maxLines="1"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
 
             <Button
                 android:id="@+id/btn_capture"
@@ -93,17 +79,18 @@
                 android:textColor="@color/white"
                 android:textStyle="bold" />
 
-            <Button
+            <br.com.simplepass.loadingbutton.customViews.CircularProgressButton
+                style="@style/Widget.AppCompat.Button.Colored"
                 android:id="@+id/btn_upload"
-                style="?android:textAppearanceMedium"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:backgroundTint="@color/colorAccent"
-                android:padding="16dp"
+                android:layout_height="50dp"
+                android:layout_marginBottom="10dp"
                 android:text="Upload"
-                android:textColor="@color/white"
-                android:textStyle="bold" />
+                app:finalCornerAngle="50dp"
+                app:initialCornerAngle="0dp"
+                app:spinning_bar_color="#FFFFFF"
+                app:spinning_bar_padding="0dp"
+                app:spinning_bar_width="3dp" />
 
         </LinearLayout>
     </ScrollView>
