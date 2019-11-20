@@ -65,7 +65,7 @@ public class RegisterActivity extends AppCompatActivity {
                     calendar.set(Calendar.YEAR, year);
                     calendar.set(Calendar.MONTH, monthOfYear);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    String date = new SimpleDateFormat("yyyy-mm-dd").format(calendar.getTime());
+                    String date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
                     birthDay.setText(date);
                 }
             }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
@@ -91,7 +91,7 @@ public class RegisterActivity extends AppCompatActivity {
                         pref.add(msg);
                     }
                     i++;
-                };
+                }
             }
             //HttpClient httpClient = new HttpClient();
             //JSONObject resp = httpClient.register(username, password, email, name, dob, pref);

@@ -269,7 +269,8 @@ public class UploadActivity extends AppCompatActivity {
             String Status = jsonObj.getString("status");
             JSONArray results = jsonObj.getJSONArray("results");
             JSONObject first = results.getJSONObject(0);
-            String city = first.getJSONObject("components").getString("city");
+            //String city = first.getJSONObject("components").getString("city");
+            String city = first.getString("formatted");
             System.out.println(city);
             postLocation = city;
 
