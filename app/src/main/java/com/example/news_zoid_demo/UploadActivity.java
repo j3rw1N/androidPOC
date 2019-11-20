@@ -272,6 +272,15 @@ public class UploadActivity extends AppCompatActivity {
             //String city = first.getJSONObject("components").getString("city");
             String city = first.getString("formatted");
             System.out.println(city);
+
+
+            String formatted = first.getString("formatted");
+            String geometry = first.getString("geometry");
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("formatted", formatted);
+            jsonObject.put("geometry", geometry);
+            city = jsonObject.toString();
+            System.out.println(city);
             postLocation = city;
 
         }
