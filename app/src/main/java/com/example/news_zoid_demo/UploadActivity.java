@@ -77,6 +77,7 @@ public class UploadActivity extends AppCompatActivity {
     private String pathToStoredVideo;
     private String awsUrl;
     private String postLocation;
+    private String fullLocation;
     private String title;
     private EditText titleEditText;
     private EditText selectCategory;
@@ -271,15 +272,16 @@ public class UploadActivity extends AppCompatActivity {
             JSONObject first = results.getJSONObject(0);
             //String city = first.getJSONObject("components").getString("city");
             String city = first.getString("formatted");
-            System.out.println(city);
-
-
-            String formatted = first.getString("formatted");
-            String geometry = first.getString("geometry");
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("formatted", formatted);
-            jsonObject.put("geometry", geometry);
-            city = jsonObject.toString();
+//            System.out.println(city);
+//
+//
+//            String formatted = first.getString("formatted");
+//            JSONObject geometry = first.getJSONObject("geometry");
+//            JSONObject jsonObject = new JSONObject();
+//            jsonObject.put("formatted", formatted);
+//            jsonObject.put("geometry", geometry);
+            city = first.getJSONObject("components").getString("city");
+            fullLocation = first.getString("formatted");
             System.out.println(city);
             postLocation = city;
 
@@ -347,6 +349,7 @@ public class UploadActivity extends AppCompatActivity {
         params.put("id", id);
         params.put("videoUrl", awsUrl);
         params.put("location", postLocation);
+        params.put("fullLocation", fullLocation);
         params.put("postedBy", username);
         params.put("category", category);
         params.put("watchedBy", watchedBy);
