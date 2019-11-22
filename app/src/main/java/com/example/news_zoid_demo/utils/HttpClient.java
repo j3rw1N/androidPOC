@@ -5,8 +5,6 @@ import android.content.Context;
 import android.os.StrictMode;
 import android.util.Log;
 
-import com.example.news_zoid_demo.data.Result;
-import com.example.news_zoid_demo.data.model.LoggedInUser;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
