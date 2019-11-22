@@ -103,8 +103,9 @@ public class UploadActivity extends AppCompatActivity {
         selectCategory.setFocusable(false);
         selectCategory.setInputType(0);
 
-
         dialog.show();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(false);
 
         postLocation = null;
         LocationConfiguration awesomeConfiguration = new LocationConfiguration.Builder()
@@ -116,7 +117,7 @@ public class UploadActivity extends AppCompatActivity {
                         .failOnConnectionSuspended(true)
                         .failOnSettingsApiSuspended(false)
                         .ignoreLastKnowLocation(false)
-                        .setWaitPeriod(20 * 1000)
+                        .setWaitPeriod(5 * 1000)
                         .build())
                 .useDefaultProviders(new DefaultProviderConfiguration.Builder()
                         .requiredTimeInterval(5 * 60 * 1000)
@@ -124,8 +125,8 @@ public class UploadActivity extends AppCompatActivity {
                         .acceptableAccuracy(5.0f)
                         .acceptableTimePeriod(5 * 60 * 1000)
                         .gpsMessage("Turn on GPS?")
-                        .setWaitPeriod(ProviderType.GPS, 20 * 1000)
-                        .setWaitPeriod(ProviderType.NETWORK, 20 * 1000)
+                        .setWaitPeriod(ProviderType.GPS, 5 * 1000)
+                        .setWaitPeriod(ProviderType.NETWORK, 5 * 1000)
                         .build())
                 .build();
 
@@ -154,9 +155,8 @@ public class UploadActivity extends AppCompatActivity {
                                 builder.append(addressStr);
                                 builder.append(" ");
                             }
-                            System.out.println("qqqqqqqqq");
-                            String fnialAddress = builder.toString(); //This is the complete address.
-                            System.out.println(fnialAddress);
+                            String finalAddress = builder.toString(); //This is the complete address.
+                            System.out.println(finalAddress);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -214,6 +214,7 @@ public class UploadActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent videoCaptureIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+                videoCaptureIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0);
                 if(videoCaptureIntent.resolveActivity(getPackageManager()) != null){
                     startActivityForResult(videoCaptureIntent, REQUEST_VIDEO_CAPTURE);
                 }
@@ -240,10 +241,11 @@ public class UploadActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode,resultCode,data);
         if(resultCode == Activity.RESULT_OK && requestCode == REQUEST_VIDEO_CAPTURE){
             uri = data.getData();
-                pathToStoredVideo = getRealPathFromURIPath(uri, UploadActivity.this);
-                Log.d(TAG, "Recorded Video Path " + pathToStoredVideo);
+            pathToStoredVideo = getRealPathFromURIPath(uri, UploadActivity.this);
+            Log.d(TAG, "Recorded Video Path " + pathToStoredVideo);
 
         }
     }
@@ -328,6 +330,7 @@ public class UploadActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                 Toast.makeText(getApplicationContext(), "Unexpected error please try again", Toast.LENGTH_SHORT).show();
                 Log.e("Login failure", statusCode+":");
+                btn.revertAnimation();
             }
 
         });
@@ -372,18 +375,18 @@ public class UploadActivity extends AppCompatActivity {
             public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
                 Toast.makeText(getApplicationContext(), "Upload failed please try again", Toast.LENGTH_SHORT).show();
                 Log.e("Upload failure", statusCode+":"+responseString);
+                btn.revertAnimation();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                 Toast.makeText(getApplicationContext(), "Unexpected error please try again", Toast.LENGTH_SHORT).show();
                 Log.e("Upload failure", statusCode+":");
+                btn.revertAnimation();
             }
 
         });
     }
-
-
 }
 
 

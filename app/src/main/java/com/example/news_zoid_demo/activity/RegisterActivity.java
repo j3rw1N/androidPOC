@@ -3,6 +3,7 @@ package com.example.news_zoid_demo.activity;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -124,6 +125,9 @@ public class RegisterActivity extends AppCompatActivity {
                 btn.doneLoadingAnimation(0, bitmap);
                 System.out.println(response.toString());
                 Toast.makeText(getApplicationContext(), "Registered successfully!!", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                btn.revertAnimation();
+                startActivity(intent);
             }
 
             @Override
@@ -146,7 +150,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         });
     }
-
 
 
 }

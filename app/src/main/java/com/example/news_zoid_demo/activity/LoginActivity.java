@@ -50,7 +50,7 @@ public class LoginActivity extends AppCompatActivity {
         PermissionListener permissionlistener = new PermissionListener() {
             @Override
             public void onPermissionGranted() {
-                Toast.makeText(LoginActivity.this, "Permission Granted", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(LoginActivity.this, "Permission Granted", Toast.LENGTH_SHORT).show();
                 createLocationRequest();
             }
 
@@ -78,14 +78,14 @@ public class LoginActivity extends AppCompatActivity {
         final Button registerButton = findViewById(R.id.btn_register);
 
         loginButton.setOnClickListener((View v)->{
-                Log.w("clickBTN", usernameEditText.getText().toString());
-                try {
-                    login(usernameEditText.getText().toString(),
-                            passwordEditText.getText().toString());
-                }
-                catch (Exception e) {
+            Log.w("clickBTN", usernameEditText.getText().toString());
+            try {
+                login(usernameEditText.getText().toString(),
+                        passwordEditText.getText().toString());
+            }
+            catch (Exception e) {
 
-                }
+            }
         });
 
         registerButton.setOnClickListener((View v)-> {
@@ -120,6 +120,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 intent.putExtra("jwtToken", jwt);
                 intent.putExtra("userName", username);
+                btn.revertAnimation();
                 startActivity(intent);
             }
 
@@ -151,13 +152,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     protected void createLocationRequest() {
-        LocationRequest locationRequest = LocationRequest.create();
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest);
-        builder.setAlwaysShow(true);
-        builder.build();
+
     }
 }
